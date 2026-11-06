@@ -5,14 +5,59 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Guetzli</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 4rem auto; padding: 0 1rem; line-height: 1.6; color: #222; background: #fafafa; }
+    :root { --bg:#fafafa; --fg:#222; --muted:#777; --card:#fff; --border:#e3e3e3; --accent:#0969da; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#0d1117; --fg:#e6edf3; --muted:#8b949e; --card:#161b22; --border:#30363d; --accent:#4493f8; }
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; max-width: 44rem; margin: 3rem auto; padding: 0 1rem; line-height: 1.5; color: var(--fg); background: var(--bg); }
     h1 { margin-bottom: .25rem; }
-    .muted { color: #777; }
+    .muted { color: var(--muted); }
+    ul { list-style: none; padding: 0; display: grid; gap: .75rem; }
+    li a { display: block; padding: .9rem 1rem; background: var(--card); border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: inherit; }
+    li a:hover { border-color: var(--accent); }
+    .name { font-weight: 600; color: var(--accent); }
+    .desc { margin-top: .2rem; }
+    .meta { font-size: .85rem; color: var(--muted); margin-top: .3rem; }
   </style>
 </head>
 <body>
-  <h1>Hallo von Guetzli 🍪</h1>
-  <p class="muted">Dummy-Startseite unter guetzli.github.io</p>
-  <p>Diese Seite ist die <code>index.html</code> im Repo <code>guetzli.github.io</code> und erscheint direkt unter der Root-URL, ohne Unterpfad.</p>
+  <h1>Guetzli 🍪</h1>
+  <p class="muted">Alle meine GitHub Pages, automatisch aus GitHub geladen.</p>
+
+  <ul id="pages"><li class="muted">Lade …</li></ul>
+
+  <script>
+    const USER = "Guetzli";
+    const SELF = (USER + ".github.io").toLowerCase();
+    const list = document.getElementById("pages");
+
+    function el(tag, cls, text) {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text) e.textContent = text;
+      return e;
+    }
+
+    fetch(`https://api.github.com/users/${USER}/repos?per_page=100&sort=pushed`)
+      .then(r => { if (!r.ok) throw new Error("GitHub API: " + r.status); return r.json(); })
+      .then(repos => {
+        const pages = repos.filter(r => r.has_pages && r.name.toLowerCase() !== SELF && !r.archived);
+        list.innerHTML = "";
+        if (!pages.length) { list.append(el("li", "muted", "Keine Pages gefunden.")); return; }
+        for (const r of pages) {
+          const a = el("a");
+          a.href = `https://${USER.toLowerCase()}.github.io/${r.name}/`;
+          a.append(el("div", "name", r.name));
+          if (r.description) a.append(el("div", "desc", r.description));
+          a.append(el("div", "meta", "Zuletzt aktualisiert: " + new Date(r.pushed_at).toLocaleDateString("de-CH")));
+          const li = el("li"); li.append(a); list.append(li);
+        }
+      })
+      .catch(err => {
+        list.innerHTML = "";
+        list.append(el("li", "muted", "Liste konnte nicht geladen werden (" + err.message + ")."));
+      });
+  </script>
 </body>
 </html>
