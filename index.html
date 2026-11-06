@@ -30,6 +30,7 @@
   <script>
     const USER = "Guetzli";
     const SELF = (USER + ".github.io").toLowerCase();
+    const TOPIC = "pages-menu"; // nur Repos mit diesem Topic erscheinen im Menü
     const list = document.getElementById("pages");
 
     function el(tag, cls, text) {
@@ -42,10 +43,10 @@
     fetch(`https://api.github.com/users/${USER}/repos?per_page=100&sort=pushed`)
       .then(r => { if (!r.ok) throw new Error("GitHub API: " + r.status); return r.json(); })
       .then(repos => {
-        const pages = repos.filter(r => r.has_pages && r.name.toLowerCase() !== SELF && !r.archived)
+        const pages = repos.filter(r => r.has_pages && (r.topics || []).includes(TOPIC) && r.name.toLowerCase() !== SELF && !r.archived)
           .sort((a, b) => a.name.localeCompare(b.name, "de", { sensitivity: "base", numeric: true }));
         list.innerHTML = "";
-        if (!pages.length) { list.append(el("li", "muted", "Keine Pages gefunden.")); return; }
+        if (!pages.length) { list.append(el("li", "muted", "Keine Pages mit Topic \"" + TOPIC + "\" gefunden.")); return; }
         for (const r of pages) {
           const a = el("a");
           a.href = `https://${USER.toLowerCase()}.github.io/${r.name}/`;
